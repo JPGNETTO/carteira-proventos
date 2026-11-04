@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "android:add": "cap add android",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
     "android:run": "npm run build && cap sync android && cap run android"
@@ -15,13 +14,22 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^2.12.7"
+    "recharts": "^2.12.7",
+    "xlsx": "^0.18.5",
+    "jspdf": "^2.5.1",
+    "framer-motion": "^11.15.0",
+    "@capacitor/share": "^6.0.2",
+    "@capacitor/filesystem": "^6.0.1",
+    "@capacitor/haptics": "^6.0.1",
+    "@capacitor-community/speech-recognition": "^6.0.0",
+    "@capacitor-community/text-to-speech": "^5.1.0"
   },
   "devDependencies": {
     "@capacitor/android": "^6.1.2",
     "@capacitor/cli": "^6.1.2",
     "@capacitor/core": "^6.1.2",
     "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.0"
+    "vite": "^5.4.0",
+    "typescript": "^5.5.4"
   }
 }
