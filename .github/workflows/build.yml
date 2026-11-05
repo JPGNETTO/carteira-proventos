@@ -30,6 +30,15 @@ jobs:
       - name: Sincronizar Capacitor
         run: npx cap sync android
 
+      - name: Conferir configuração de rede do app (IA/cotações)
+        run: |
+          CFG=android/app/src/main/assets/capacitor.config.json
+          cat "$CFG"
+          if ! grep -q '"allowMixedContent": true' "$CFG"; then
+            echo "::error::capacitor.config.ts sem allowMixedContent: true — o app não conseguirá falar com o servidor http:// da IA"
+            exit 1
+          fi
+
       - name: Permitir HTTP para o servidor da IA (Tailscale/LAN)
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml
