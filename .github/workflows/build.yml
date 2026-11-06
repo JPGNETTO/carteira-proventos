@@ -30,6 +30,18 @@ jobs:
       - name: Sincronizar Capacitor
         run: npx cap sync android
 
+      - name: Ícone do app (fazendeiro de dinheiro)
+        run: |
+          RES=android/app/src/main/res
+          unzip -o android-extra/icone.zip -d android/app/src/main/ > /dev/null
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            for f in ic_launcher ic_launcher_round ic_launcher_foreground ic_launcher_background; do
+              [ -f "$RES/mipmap-$d/$f.png" ] || { echo "::error::faltou $RES/mipmap-$d/$f.png"; exit 1; }
+            done
+          done
+          grep -q '@mipmap/ic_launcher_background' "$RES/mipmap-anydpi-v26/ic_launcher.xml" || { echo "::error::ícone adaptável não trocado"; exit 1; }
+          echo "Ícone instalado."
+
       - name: Instalar plugin nativo SalvarArquivo (backup com "Salvar como")
         run: |
           MAIN=$(find android/app/src/main/java -name MainActivity.java | head -n 1)
@@ -74,11 +86,37 @@ jobs:
           yes | "$SDKMANAGER" --licenses > /dev/null || true
           "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
+      - name: Chave fixa de assinatura (instalar por cima sem desinstalar)
+        env:
+          CHAVE_DEBUG_B64: ${{ secrets.CHAVE_DEBUG_B64 }}
+        run: |
+          if [ -n "$CHAVE_DEBUG_B64" ]; then
+            mkdir -p "$HOME/.android"
+            echo "$CHAVE_DEBUG_B64" | base64 -d > "$HOME/.android/debug.keystore"
+            keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey > /dev/null || { echo "::error::a chave do segredo CHAVE_DEBUG_B64 não abriu (senha android, apelido androiddebugkey)"; exit 1; }
+            echo "Chave fixa instalada."
+          else
+            echo "::warning::Segredo CHAVE_DEBUG_B64 não cadastrado: este APK sai com uma chave nova e NÃO atualiza o app instalado."
+          fi
+
       - name: Gerar APK (debug)
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
+
+      - name: Conferir a assinatura do APK
+        run: |
+          ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs "$APK" | grep -i 'SHA-256' | head -n 1 | tee assinatura.txt
+          if [ -f "$HOME/.android/debug.keystore" ]; then
+            CHAVE=$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -i 'SHA256:' | head -n 1 | sed 's/.*SHA256: *//' | tr -d ':' | tr 'A-F' 'a-f')
+            APKSIG=$(sed 's/.*: *//' assinatura.txt | tr -d ': ' | tr 'A-F' 'a-f')
+            echo "chave: $CHAVE"; echo "apk:   $APKSIG"
+            [ "$CHAVE" = "$APKSIG" ] || { echo "::error::o APK não saiu com a chave fixa"; exit 1; }
+            echo "APK assinado com a chave fixa: vai instalar por cima da versão anterior."
+          fi
 
       - name: Publicar APK
         uses: actions/upload-artifact@v4
