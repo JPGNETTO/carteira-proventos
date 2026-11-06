@@ -94,6 +94,28 @@ jobs:
             mkdir -p "$HOME/.android"
             echo "$CHAVE_DEBUG_B64" | base64 -d > "$HOME/.android/debug.keystore"
             keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey > /dev/null || { echo "::error::a chave do segredo CHAVE_DEBUG_B64 não abriu (senha android, apelido androiddebugkey)"; exit 1; }
+            # o Gradle do CI não usava ~/.android: a chave passa a ser indicada direto no app/build.gradle
+            cp "$HOME/.android/debug.keystore" android/app/carteira-debug.keystore
+            cat >> android/app/build.gradle <<'FIM_ASSINATURA'
+
+          // chave fixa (CI): o APK de teste sai sempre com a mesma assinatura e instala por cima
+          android {
+              signingConfigs {
+                  debug {
+                      storeFile file('carteira-debug.keystore')
+                      storePassword 'android'
+                      keyAlias 'androiddebugkey'
+                      keyPassword 'android'
+                  }
+              }
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+          FIM_ASSINATURA
+            tail -n 18 android/app/build.gradle
             echo "Chave fixa instalada."
           else
             echo "::warning::Segredo CHAVE_DEBUG_B64 não cadastrado: este APK sai com uma chave nova e NÃO atualiza o app instalado."
