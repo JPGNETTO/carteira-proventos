@@ -30,6 +30,18 @@ jobs:
       - name: Sincronizar Capacitor
         run: npx cap sync android
 
+      - name: Instalar plugin nativo SalvarArquivo (backup com "Salvar como")
+        run: |
+          MAIN=$(find android/app/src/main/java -name MainActivity.java | head -n 1)
+          if [ -z "$MAIN" ]; then echo "::error::MainActivity.java não encontrada"; exit 1; fi
+          DIR=$(dirname "$MAIN")
+          PKG=$(grep -m1 '^package ' "$MAIN" | sed -E 's/package ([^;]+);/\1/')
+          echo "Pacote do app: $PKG  ($DIR)"
+          sed "s/__PACOTE__/$PKG/" android-extra/SalvarArquivoPlugin.java > "$DIR/SalvarArquivoPlugin.java"
+          sed "s/__PACOTE__/$PKG/" android-extra/MainActivity.java > "$MAIN"
+          grep -q 'registerPlugin(SalvarArquivoPlugin.class)' "$MAIN" || { echo "::error::plugin não registrado"; exit 1; }
+          cat "$MAIN"
+
       - name: Conferir configuração de rede do app (IA/cotações)
         run: |
           CFG=android/app/src/main/assets/capacitor.config.json
