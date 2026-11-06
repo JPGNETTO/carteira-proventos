@@ -35,6 +35,10 @@ input, select, button {
 .tela-anim {
   animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
+/* no chat a entrada é sem deslizar: o transform da animação prenderia o rodapé fixo na tela errada */
+.tela-anim.sem-anim {
+  animation: none;
+}
 
 /* Botões com leve resposta ao toque */
 button {
@@ -152,6 +156,24 @@ button:active {
 /* botões e itens com toque mais alto (estilo app de banco) */
 .app-espacoso button {
   letter-spacing: 0.2px;
+}
+
+/* ════════════════════════════════════════════════════════════════════ */
+/* DENSIDADE COMPACTA (padrão) — menos vão entre os blocos e nas bordas    */
+/* Tem prioridade sobre o tema espaçoso (Minimal+).                        */
+/* ════════════════════════════════════════════════════════════════════ */
+.app-compacto .tela-anim {
+  padding: 8px 10px 16px !important;
+}
+.app-compacto .tela-anim > div {
+  margin-bottom: 10px !important;
+}
+.app-compacto .tela-anim > div:last-child {
+  margin-bottom: 0 !important;
+}
+/* Início: blocos antigos (saudação, proventos, gráficos) também mais juntos */
+.app-compacto .tela-painel > div > div:not(:last-child) {
+  margin-bottom: 10px !important;
 }
 
 /* Cursor piscando do streaming da IA */
